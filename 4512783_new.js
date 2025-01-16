@@ -27,8 +27,6 @@ const local = {
 
                 //Custom cluster
 
-                    // Vacation / Holiday mode is displayed as an INT, converting this to a date on display
-                    // Mapping  here to be able to transform incomming data
                 if (data[0x801f] !== undefined) {                   // 0x801F  Vacation_mode                   BOOLEAN false
                     const lookup = { 0: 'OFF', 1: 'ON' };
                     result.vacation_mode = lookup[data[0x801f]];
@@ -139,77 +137,77 @@ const definitions = [
         ],
         extend: [
             
-            //(0, modernExtend_1.binary)({        // 0x8000  Window_check                    BOOLEAN true
-            //    name: 'window_check',
-            //    valueOn: ['ON', 1],
-            //    valueOff: ['OFF', 0],
-            //    cluster: 'hvacThermostat',
-            //    attribute: { ID: 0x8000, type: zigbee_herdsman_1.Zcl.DataType.BOOLEAN },
-            //    description: 'Enable or Disable Window Check mode',
-            //                    
-            //}),
-            //(0, modernExtend_1.binary)({        // 0x8001  Frost                           BOOLEAN false
-            //    name: 'frost',
-            //    valueOn: ['ON', 1],
-            //    valueOff: ['OFF', 0],
-            //    cluster: 'hvacThermostat',
-            //    attribute: { ID: 0x8001, type: zigbee_herdsman_1.Zcl.DataType.BOOLEAN },
-            //    description: 'Enable or Disable Frost mode',
-            //}),
-            //(0, modernExtend_1.binary)({        // 0x8002  Window_state                    BOOLEAN false
-            //    name: 'window_state',
-            //    valueOn: ['Open', 1],
-            //    valueOff: ['Closed', 0],
-            //    cluster: 'hvacThermostat',
-            //    attribute: { ID: 0x8002, type: zigbee_herdsman_1.Zcl.DataType.BOOLEAN },
-            //    description: 'Window state Open/Closed',
-            //    access: 'STATE_GET',
-            //    entityCategory: 'diagnostic',
-            //}),
-            //(0, modernExtend_1.enumLookup)({    // 0x8003  Work_days                       ENUM8   0x00
-            //    name: 'work_days',
-            //    lookup: {'Mon-Fri Sat-Sun': 0, 'Mon-Sat Sun': 1, 'No Time Off': 2, 'Time Off': 3 },
-            //    cluster: 'hvacThermostat',
-            //    attribute: { ID: 0x8003, type: zigbee_herdsman_1.Zcl.DataType.ENUM8 },
-            //    description: 'Schedule set on unit',
-            //    access: 'STATE_GET',
-            //    entityCategory: 'diagnostic',                
-            //}),
-            (0, modernExtend_1.enumLookup)({    // 0x8004  Sensor_mode                     ENUM8   0x00
+            (modernExtend_1.binary)({        // 0x8000  Window_check                    BOOLEAN true
+                name: 'window_check',
+                valueOn: ['ON', 1],
+                valueOff: ['OFF', 0],
+                cluster: 'hvacThermostat',
+                attribute: { ID: 0x8000, type: Zcl.DataType.BOOLEAN },
+                description: 'Enable or Disable Window Check mode',
+                                
+            }),
+            (modernExtend_1.binary)({        // 0x8001  Frost                           BOOLEAN false
+                name: 'frost',
+                valueOn: ['ON', 1],
+                valueOff: ['OFF', 0],
+                cluster: 'hvacThermostat',
+                attribute: { ID: 0x8001, type: Zcl.DataType.BOOLEAN },
+                description: 'Enable or Disable Frost mode',
+            }),
+            (modernExtend_1.binary)({        // 0x8002  Window_state                    BOOLEAN false
+                name: 'window_state',
+                valueOn: ['Open', 1],
+                valueOff: ['Closed', 0],
+                cluster: 'hvacThermostat',
+                attribute: { ID: 0x8002, type: Zcl.DataType.BOOLEAN },
+                description: 'Window state Open/Closed',
+                access: 'STATE_GET',
+                entityCategory: 'diagnostic',
+            }),
+                    //(0, modernExtend_1.enumLookup)({    // 0x8003  Work_days                       ENUM8   0x00
+                    //    name: 'work_days',
+                    //    lookup: {'Mon-Fri Sat-Sun': 0, 'Mon-Sat Sun': 1, 'No Time Off': 2, 'Time Off': 3 },
+                    //    cluster: 'hvacThermostat',
+                    //    attribute: { ID: 0x8003, type: zigbee_herdsman_1.Zcl.DataType.ENUM8 },
+                    //    description: 'Schedule set on unit',
+                    //    access: 'STATE_GET',
+                    //    entityCategory: 'diagnostic',                
+                    //}),
+            (modernExtend_1.enumLookup)({    // 0x8004  Sensor_mode                     ENUM8   0x00
                 name: 'sensor_mode',
                 lookup: {'Air': 0, 'Floor': 1, 'External': 3 },
                 cluster: 'hvacThermostat',
-                attribute: { ID: 0x8004, type: zigbee_herdsman_1.Zcl.DataType.ENUM8 },
+                attribute: { ID: 0x8004, type: Zcl.DataType.ENUM8 },
                 description: 'Select which sensor the thermostat uses to control the room',
             }),
-            //(0, modernExtend_1.numeric)({       // 0x8005  Backlight                       INT8U   0x0A
-            //    name: 'backlight',
-            //    unit: '%',
-            //    valueMin: 0,
-            //    valueMax: 100,
-            //    valueStep: 5,
-            //    cluster: 'hvacThermostat',
-            //    attribute: { ID: 0x8005, type: zigbee_herdsman_1.Zcl.DataType.UINT8 },
-            //    description: 'Brightness of the display',
-            //    entityCategory: 'config',
-            //}),
-            //(0, modernExtend_1.enumLookup)({    // 0x8006  Fault                           ENUM8   0x00
-            //    name: 'fault',
-            //    lookup: {'none': 0, 'er1': 1, 'er2': 2, 'er3':4, 'er4':8 , 'Floor sensor fault': 16, 'External sensor fault': 32, 'er7': 64, 'er8': 128},
-            //    cluster: 'hvacThermostat',
-            //    attribute: { ID: 0x8006, type: zigbee_herdsman_1.Zcl.DataType.ENUM8 },
-            //    description: 'Fault code',
-            //    access: 'STATE_GET',
-            //    entityCategory: 'diagnostic',                
-            //}),
-            (modernExtend_1.numeric)({     // 0x8007  Regulator                       INT8U   0x00  // No data recieved
+            (modernExtend_1.numeric)({       // 0x8005  Backlight                       INT8U   0x0A
+                name: 'backlight',
+                unit: '%',
+                valueMin: 0,
+                valueMax: 100,
+                valueStep: 5,
+                cluster: 'hvacThermostat',
+                attribute: { ID: 0x8005, type: Zcl.DataType.UINT8 },
+                description: 'Brightness of the display',
+                entityCategory: 'config',
+            }),
+            (modernExtend_1.enumLookup)({    // 0x8006  Fault                           ENUM8   0x00
+                name: 'fault',
+                lookup: {'none': 0, 'er1': 1, 'er2': 2, 'er3':4, 'er4':8 , 'Floor sensor fault': 16, 'External sensor fault': 32, 'er7': 64, 'er8': 128},
+                cluster: 'hvacThermostat',
+                attribute: { ID: 0x8006, type: Zcl.DataType.ENUM8 },
+                description: 'Fault code',
+                access: 'STATE_GET',
+                entityCategory: 'diagnostic',                
+            }),
+            (0, modernExtend_1.numeric)({     // 0x8007  Regulator                       INT8U   0x00  // No data recieved
                 name: 'regulator',
                 //unit: '%',
                 //valueMin: 0,
                 //valueMax: 255,
                 //valueStep: 5,
                 cluster: 'hvacThermostat',
-                attribute: { ID: 0x8007, type: zigbee_herdsman_1.Zcl.DataType.UINT8 },
+                attribute: { ID: 0x8007, type: Zcl.DataType.UINT8 },
                 description: 'Regulator',
                 //access: 'STATE_GET',
                 //entityCategory: 'diagnostic',
@@ -264,11 +262,11 @@ const definitions = [
                     //    entityCategory: 'config',
                     //}),
 
-            (modernExtend_1.enumLookup)({       // 0x801C  Regulation_mode                 ENUM8   0x00 // No data recieved
+            (0, modernExtend_1.enumLookup)({       // 0x801C  Regulation_mode                 ENUM8   0x00 // No data recieved
                 name: 'regulation_mode',
-                lookup: {'Off': 0, 'On': 1, 'Mix': 2 }, 
+                lookup: {'0': 0,'1': 1}, 
                 cluster: 'hvacThermostat',
-                attribute: { ID: 0x801c, type: zigbee_herdsman_1.Zcl.DataType.ENUM8 },
+                attribute: { ID: 0x801c, type: Zcl.DataType.ENUM8 },
                 description: '',
                 //access: 'STATE_GET',
                 //entityCategory: 'diagnostic',
@@ -280,7 +278,7 @@ const definitions = [
                 valueMax: 100,
                 valueStep: 10,
                 cluster: 'hvacThermostat',
-                attribute: { ID: 0x801d, type: zigbee_herdsman_1.Zcl.DataType.INT16 },
+                attribute: { ID: 0x801d, type: Zcl.DataType.INT16 },
                 description: '',
                 entityCategory: 'config',
             }),
@@ -298,7 +296,7 @@ const definitions = [
                 valueOn: ['ON', 1],
                 valueOff: ['OFF', 0],
                 cluster: 'hvacThermostat',
-                attribute: { ID: 0x8022, type: zigbee_herdsman_1.Zcl.DataType.BOOLEAN },
+                attribute: { ID: 0x8022, type: Zcl.DataType.BOOLEAN },
                 description: 'Enable or Disable auto time sync',
             }),
             (modernExtend_1.enumLookup)({    // 0x8023  Countdown_set                   ENUM8   0x00
@@ -306,7 +304,7 @@ const definitions = [
                 lookup: {'Off': 0,'5min': 1, '10min': 2, '15min': 3, '20min': 4, '25min': 5, '30min': 6, '35min': 7, '40min': 8, '45min': 9, '50min': 10, '55min': 11, '1 hour': 12,
                     '1h5min': 13, '1h10min': 14, '1h15min': 15, '1h20min': 16, '1h25min': 17, '1h30min': 18, '1h35min': 19, '1h40min': 20, '1h45min': 21, '1h50min': 22, '1h55min': 23, '2 hours': 24}, 
                 cluster: 'hvacThermostat',
-                attribute: { ID: 0x8023, type: zigbee_herdsman_1.Zcl.DataType.ENUM8 },
+                attribute: { ID: 0x8023, type: Zcl.DataType.ENUM8 },
                 description: 'Status of Boost Mode',
                 //access: 'STATE_GET',
                 //entityCategory: 'diagnostic',
@@ -315,7 +313,7 @@ const definitions = [
                 name: 'Boost mode countdown',
                 unit: 'minutes',
                 cluster: 'hvacThermostat',
-                attribute: {ID: 0x8024, type: zigbee_herdsman_1.Zcl.DataType.INT16 },
+                attribute: {ID: 0x8024, type: Zcl.DataType.INT16 },
                 description: 'Updates every minute',
                 access: 'STATE_GET',
                 entityCategory: 'diagnostic',
@@ -324,12 +322,13 @@ const definitions = [
         
         exposes: [
             e.climate()
-                .withSetpoint('occupied_heating_setpoint', 5, 35, 0.5)
+                
                 .withLocalTemperature()
-                .withLocalTemperatureCalibration(-3, 3, 0.1)
+                .withSetpoint('occupied_heating_setpoint', 5, 35, 0.5)
+                .withLocalTemperatureCalibration(-10, 10, 0.5)
                 .withSystemMode(['off', 'cool', 'heat'])
-                .withRunningState(['cool', 'heat', 'idle'])
-                .withPiHeatingDemand(), 
+                .withRunningState(['cool', 'heat', 'idle']),
+                //.withPiHeatingDemand(), 
             // e.programming_operation_mode('setpoint'),           
             
             e.binary('child_lock', ea.ALL, 'LOCK', 'UNLOCK')
@@ -337,9 +336,7 @@ const definitions = [
             e.enum('temperature_display_mode', ea.ALL, ['celsius', 'fahrenheit'])
                 .withLabel('Temperature Unit')
                 .withDescription('Select Unit'),
-                
-            ////e.enum('program_mode', ea.STATE_GET, ['Manual', 'Program', 'eco', 'Regulator']),
-            //
+
             //// Metering
             e.power(), 
             e.current(), 
@@ -360,9 +357,6 @@ const definitions = [
                 .withDescription('Start date in MM/DD/YYYY format'),
             e.text('vacation_end_date', ea.ALL)
                 .withDescription('End date in MM/DD/YYYY format'),
-            //e.enum('countdown_set', ea.ALL, ['OFF', 'ON', 'TEST'])
-            //    .withLabel('Boot Mode'),
-            //e.numeric('countdown_left', ea.ALL),
 
         ],
         onEvent: async (type, data, device, options) => {
