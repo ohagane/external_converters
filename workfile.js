@@ -437,6 +437,8 @@ const definitions = [
             local.tz.namron_thermostat_edge,
         ],
 exposes: [
+            // Humidity
+            e.humidity(),
             // Thermostat
             e.climate()                
                 .withLocalTemperature()
@@ -446,34 +448,40 @@ exposes: [
                 .withRunningState(['cool', 'heat', 'idle']),
                 //.withPiHeatingDemand(), 
             
-            // Custom Programming Operation Mode
-            e.enum('programming_operation_mode', ea.ALL, ['Manual', 'Program', 'Eco'])
-                .withLabel('Operating mode'),         
-            
+            // hvacUserInterface
             e.binary('child_lock', ea.ALL, 'LOCK', 'UNLOCK')
                 .withDescription('Enables/disables physical input on the device'),
             e.enum('temperature_display_mode', ea.ALL, ['celsius', 'fahrenheit'])
                 .withLabel('Temperature Unit')
-                .withDescription('Select Unit'),            
+                .withDescription('Select Unit'), 
+            //// Metering
+                e.power(), 
+                e.current(), 
+                e.energy(),           
 
         // From Custom Cluster
             // Error
-            e.enum('fault', ea.STATE_GET, ['none', 'er1', 'er2', 'er3', 'er4', 'Floor sensor fault', 'External sensor fault', 'er7', 'er8']),
+            e.enum('fault', ea.STATE_GET, ['none', 'er1', 'er2', 'er3', 'er4', 'Floor sensor fault', 'External sensor fault', 'er7', 'er8'])
+                .withDescription('Check display for more info.'),
 
             // Functions
-            e.binary('window_check', ea.ALL, 'ON', 'OFF'),
+            e.binary('window_check', ea.ALL, 'ON', 'OFF')
+                .withDescription('Detect temperature drop, and stops operation'),
             e.binary('frost', ea.ALL, 'ON', 'OFF')
                 .withDescription('Set Anti-Frost Mode'),
             e.binary('window_state', ea.STATE_GET, 'Closed', 'Open')
-                .withDescription('Open Window Detection'),
-            e.enum('work_days', ea.STATE_GET, ['Mon-Fri Sat-Sun', 'Mon-Sat Sun', 'No Time Off', 'Time Off']),
+                .withDescription('Display Open Window icon on display'),
+            e.enum('work_days', ea.STATE_GET, ['Mon-Fri Sat-Sun', 'Mon-Sat Sun', 'No Time Off', 'Time Off']), //not able to change this setting, set to read only
             e.numeric('backlight', ea.ALL)
                 .withValueMin(0).withValueMax(100).withValueStep(5)
                 .withUnit('%'),
             e.binary('auto_time', ea.ALL, 'ON', 'OFF'),
-            e.numeric('time_sync_value', ea.STATE_GET), 
+            //e.numeric('time_sync_value', ea.STATE_GET), // only used by onEvent
 
             // Mode select
+                // Custom Programming Operation Mode
+            e.enum('programming_operation_mode', ea.ALL, ['Manual', 'Program', 'Eco'])
+                .withLabel('Operating mode'),  
             e.enum('sensor_mode', ea.ALL, ['Air', 'Floor', 'External', 'Regulator'])
             .withLabel('Sensor control')
             .withDescription('Floor or external only works if sensors are installed'),
@@ -514,13 +522,10 @@ exposes: [
             e.numeric('occupied_heating_setpoint_f', ea.STATE_GET),
             e.numeric('local_temperature_f', ea.STATE_GET),
             e.numeric('holiday_temp_set_f', ea.STATE_GET),
-            e.enum('regulator_mode', ea.STATE_GET, ['ON', 'OFF']),         
-            e.binary('summer_winter_switch', ea.ALL, 'ON', 'OFF'),
+            e.enum('regulator_mode', ea.STATE_GET, ['ON', 'OFF']), // unsure of values coming from unit        
+            //e.binary('summer_winter_switch', ea.ALL, 'ON', 'OFF'), //can't find this in unit menu??
 
-            //// Metering
-            e.power(), 
-            e.current(), 
-            e.energy(),
+        
         ],
         onEvent: async (type, data, device, options) => {
             const endpoint = device.getEndpoint(1);
@@ -534,7 +539,7 @@ exposes: [
                     try {
                         // Device does not asks for the time with binding, therefore we write the time every 24 hours
                         const time = new Date().getTime();
-                        const value = time / 1000; // removing milli seconds
+                        const value = time / 1000; // removing milliseconds
                         await endpoint.write('hvacThermostat', { 0x800b: {value: value, type: zigbee_herdsman_1.Zcl.DataType.UINT32}} );         
                     }
                     catch {
