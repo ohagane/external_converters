@@ -14,6 +14,7 @@ const ea = exposes.access;
 const e = exposes.presets;
 
 const hzcelectricsManufacturer = { manufacturerCode: zigbee_herdsman_1.Zcl.ManufacturerCode.SHENZHEN_SHYUGJ_TECHNOLOGY_CO_LTD };
+const date2000 = 86400
 
 const local = {
     fz: {
@@ -24,9 +25,14 @@ const local = {
                 const result  = {};
                 const data = msg.data;
                 
+                
+                if (msg.data.programingOperMode !== undefined) {    // Custom Programming Operation Mode
+                    const lookup = {0: 'Manual', 1: 'Program', 5: 'Eco'};
+                    result['programming_operation_mode'] = utils.getFromLookup(data['programingOperMode'], lookup);
+                }
 
                 //Custom cluster
-
+                
                 if (data[0x801f] !== undefined) {                   // 0x801F  Vacation_mode                   BOOLEAN false
                     const lookup = { 0: 'OFF', 1: 'ON' };
                     result.vacation_mode = lookup[data[0x801f]];
@@ -35,7 +41,6 @@ const local = {
                     result.holiday_temp_set  = [data[0x8013]] / 100;
                 }
                         // if (data[0x801b] !== undefined) {                // 0x801B  Holiday_temp_set_f              INT16S  0x1388 
-                        //     // 0x801B Holiday_temp_set_f INT16S 0x1388
                         //     result.holiday_temp_set_f = [data[0x801b]];
                         // }
                 if (data[0x8020] !== undefined) {                   // 0x8020  Vacation_start_date             INT32U  0x00
@@ -55,13 +60,36 @@ const local = {
     tz: {
         namron_thermostat_edge: {
             key: [
-                
+                'programming_operation_mode',
                 'vacation_mode',
                 'holiday_temp_set',
                 'vacation_start_date', 
                 'vacation_end_date',
             ],
             convertSet: async(entity, key, value, meta) => {
+                if (key === 'programming_operation_mode') {                          // Custom Programming Operation Mode
+                    const lookup = {'Manual': 0, 'Program': 1, 'Eco': 5};
+                    const payload = {0x0025: {value: utils.getFromLookup(value, lookup), type: Zcl.DataType.BITMAP8}};                   
+                    await entity.write('hvacThermostat', payload);
+                    // Testing alternative mode control
+                    //console.log(payload[37].value);
+                    //if (payload[37].value === 2) {
+                    //    await entity.write('hvacThermostat',{0x801f: {value: 1, type: Zcl.DataType.BOOLEAN}},)
+                    //    console.log(payload);
+                    //}
+                    //else {
+                    //    await entity.write('hvacThermostat',{0x801f: {value: 0, type: Zcl.DataType.BOOLEAN}},)
+                    //}  
+                    //if (payload[37].value === 4) {
+                    //    await entity.write('hvacThermostat',{0x8001: {value: 1, type: Zcl.DataType.BOOLEAN}},)
+                    //    await entity.read('hvacThermostat', [0x8001]);
+                    //}
+                    //else {
+                    //    await entity.write('hvacThermostat',{0x8001: {value: 0, type: Zcl.DataType.BOOLEAN}},)
+                    //    await entity.read('hvacThermostat', [0x8001]);
+                    //}                  
+                }
+
 
                 if (key === 'vacation_mode') {                          // 0x801F  Vacation_mode                   BOOLEAN false
                     const lookup = {'OFF': 0, 'ON': 1};
@@ -90,6 +118,9 @@ const local = {
             },
             convertGet: async (entity, key, meta) => {
                 switch (key) {
+                case 'programming_operation_mode':   
+                    await entity.read('hvacThermostat', [0x0025]);
+                    break;
                 case 'vacation_mode':   
                     await entity.read('hvacThermostat', [0x801f]);
                     break;
@@ -130,8 +161,7 @@ const definitions = [
             toZigbee_1.thermostat_occupied_heating_setpoint,
             toZigbee_1.thermostat_temperature_display_mode,
             toZigbee_1.thermostat_system_mode,
-            toZigbee_1.thermostat_running_mode,
-            //toZigbee_1.thermostat_programming_operation_mode,            
+            toZigbee_1.thermostat_running_mode,           
             toZigbee_1.namron_thermostat_child_lock,
             local.tz.namron_thermostat_edge,
         ],
@@ -175,7 +205,7 @@ const definitions = [
                     //}),
             (modernExtend_1.enumLookup)({    // 0x8004  Sensor_mode                     ENUM8   0x00
                 name: 'sensor_mode',
-                lookup: {'Air': 0, 'Floor': 1, 'External': 3 },
+                lookup: {'Air': 0, 'Floor': 1, 'External': 3, 'Regulator': 6},
                 cluster: 'hvacThermostat',
                 attribute: { ID: 0x8004, type: Zcl.DataType.ENUM8 },
                 description: 'Select which sensor the thermostat uses to control the room',
@@ -262,16 +292,16 @@ const definitions = [
                     //    entityCategory: 'config',
                     //}),
 
-            (0, modernExtend_1.enumLookup)({       // 0x801C  Regulation_mode                 ENUM8   0x00 // No data recieved
+            (0, modernExtend_1.enumLookup)({            // 0x801C  Regulation_mode                 ENUM8   0x00 // No data recieved
                 name: 'regulation_mode',
-                lookup: {'0': 0,'1': 1}, 
+                lookup: {'Off': 0,'1min': 1}, 
                 cluster: 'hvacThermostat',
                 attribute: { ID: 0x801c, type: Zcl.DataType.ENUM8 },
                 description: '',
                 //access: 'STATE_GET',
                 //entityCategory: 'diagnostic',
             }),
-            (modernExtend_1.numeric)({       // 0x801D  Regulator_percentage            INT16S  0x00
+            (modernExtend_1.numeric)({                  // 0x801D  Regulator_percentage            INT16S  0x00
                 name: 'regulator_percentage',
                 unit: '%',
                 valueMin: 0,
@@ -310,7 +340,7 @@ const definitions = [
                 //entityCategory: 'diagnostic',
             }),
             (modernExtend_1.numeric)({       // 0x8024  Countdown_left                  INT16S  0x00
-                name: 'Boost mode countdown',
+                name: 'boost mode countdown',
                 unit: 'minutes',
                 cluster: 'hvacThermostat',
                 attribute: {ID: 0x8024, type: Zcl.DataType.INT16 },
@@ -329,7 +359,10 @@ const definitions = [
                 .withSystemMode(['off', 'cool', 'heat'])
                 .withRunningState(['cool', 'heat', 'idle']),
                 //.withPiHeatingDemand(), 
-            // e.programming_operation_mode('setpoint'),           
+            
+            // Custom Programming Operation Mode
+            e.enum('programming_operation_mode', ea.ALL, ['Manual', 'Program', 'Eco'])
+                .withLabel('Operating mode'),         
             
             e.binary('child_lock', ea.ALL, 'LOCK', 'UNLOCK')
                 .withDescription('Enables/disables physical input on the device'),
@@ -345,17 +378,20 @@ const definitions = [
             // Vacation/Holiday mode
 
             e.binary('vacation_mode', ea.ALL, 'ON', 'OFF')
-                .withDescription('Displays a "Palmtree" in display when on. If set date is in future the "Palmtree is dimmed.'),
+                .withLabel('Holiday mode')
+                .withDescription('Displays a "Palmtree" in display when on. If set date is in future the "Palmtree is dimmed until set date is reached.'),
                 
             e.numeric('holiday_temp_set', ea.ALL)
                 .withValueMin(5)
                 .withValueMax(35)
                 .withValueStep(0.5)
-                .withLabel('Vacation temperature setpoint'),
+                .withLabel('Holiday temperature setpoint'),
             
             e.text('vacation_start_date', ea.ALL)
+                .withLabel('Holiday start date')
                 .withDescription('Start date in MM/DD/YYYY format'),
             e.text('vacation_end_date', ea.ALL)
+            .withLabel('Holiday end date')
                 .withDescription('End date in MM/DD/YYYY format'),
 
         ],
