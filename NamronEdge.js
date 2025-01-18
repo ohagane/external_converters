@@ -10,9 +10,7 @@ const globalStore = require('zigbee-herdsman-converters/lib/store');
 const utils = require('zigbee-herdsman-converters/lib/utils');
 const ea = exposes.access;
 const e = exposes.presets;
-
-const hzcelectricsManufacturer = { manufacturerCode: zigbee_herdsman_1.Zcl.ManufacturerCode.SHENZHEN_SHYUGJ_TECHNOLOGY_CO_LTD };
-const date2000 = 86400
+const oneDay_millisec = 60 * 60 * 24 * 1000; // one day in miliseconds
 
 const local = {
     fz: {
@@ -24,7 +22,8 @@ const local = {
                 const data = msg.data;
                 
                 
-                if (msg.data.programingOperMode !== undefined) {    // Custom Programming Operation Mode
+                // Custom Programming Operation Mode
+                if (msg.data.programingOperMode !== undefined) {    
                     const lookup = {0: 'Manual', 1: 'Program', 5: 'Eco'};
                     result['programming_operation_mode'] = utils.getFromLookup(data['programingOperMode'], lookup);
                 }
@@ -100,13 +99,12 @@ const local = {
                     result.vacation_mode = lookup[data[0x801F]];
                 }
                 if (data[0x8020] !== undefined) {                   // 0x8020  Vacation_start_date             INT32U  0x00
-                    const date_start = new Date((data[0x8020]*86400)*1000);                    
+                    const date_start = new Date(data[0x8020]*86400000); //24h in milliseconds                    
                     result.vacation_start_date = date_start.toLocaleDateString();
                 }
                 if (data[0x8021] !== undefined) {                   // 0x8021  Vacation_end_date               INT32U  0x00
-                    const date_end = new Date((data[0x8021]*86400)*1000);
+                    const date_end = new Date(data[0x8021]*86400000); //24h in milliseconds
                     result.vacation_end_date = date_end.toLocaleDateString(); 
-                    console.log(data[0x8021])
                 }   
                 if (data[0x8022] !== undefined) {                   // 0x8022  Auto_time                       BOOLEAN false
                     const lookup = { 0: 'OFF', 1: 'ON' };
@@ -162,23 +160,7 @@ const local = {
                     const lookup = {'Manual': 0, 'Program': 1, 'Eco': 5};
                     const payload = {0x0025: {value: utils.getFromLookup(value, lookup), type: Zcl.DataType.BITMAP8}};                   
                     await entity.write('hvacThermostat', payload);
-                    // Testing alternative mode control
-                    //console.log(payload[37].value);
-                    //if (payload[37].value === 2) {
-                    //    await entity.write('hvacThermostat',{0x801f: {value: 1, type: Zcl.DataType.BOOLEAN}},)
-                    //    console.log(payload);
-                    //}
-                    //else {
-                    //    await entity.write('hvacThermostat',{0x801f: {value: 0, type: Zcl.DataType.BOOLEAN}},)
-                    //}  
-                    //if (payload[37].value === 4) {
-                    //    await entity.write('hvacThermostat',{0x8001: {value: 1, type: Zcl.DataType.BOOLEAN}},)
-                    //    await entity.read('hvacThermostat', [0x8001]);
-                    //}
-                    //else {
-                    //    await entity.write('hvacThermostat',{0x8001: {value: 0, type: Zcl.DataType.BOOLEAN}},)
-                    //    await entity.read('hvacThermostat', [0x8001]);
-                    //}                  
+             
                 }
                 // Custom Cluster 0x8000
                 if (key === 'window_check') {                       // 0x8000  Window_check                     BOOLEAN true
@@ -286,13 +268,13 @@ const local = {
                 }
                 else if (key === 'vacation_start_date') {        // 0x8020  Vacation_start_date                 INT32U  0x00 
                     const start_date_int = new Date(value);  
-                    const new_value = start_date_int / 86400000 + 1;
+                    const new_value = start_date_int / 86400000 + 1; //24h in milliseconds
                     const payload = {0x8020: {value: new_value, type: zigbee_herdsman_1.Zcl.DataType.UINT32}};
                     await entity.write('hvacThermostat', payload);    
                 }
                 else if (key === 'vacation_end_date') {          // 0x8021  Vacation_end_date                   INT32U  0x00
                     const end_date_int = new Date(value); 
-                    const new_value = end_date_int / 86400000 + 1; 
+                    const new_value = end_date_int / 86400000 + 1; //24h in milliseconds
                     const payload = {0x8021: {value: new_value, type: zigbee_herdsman_1.Zcl.DataType.UINT32}};
                     await entity.write('hvacThermostat', payload);
                 }  
@@ -483,9 +465,13 @@ exposes: [
             e.enum('programming_operation_mode', ea.ALL, ['Manual', 'Program', 'Eco'])
                 .withLabel('Operating mode'),  
             e.enum('sensor_mode', ea.ALL, ['Air', 'Floor', 'External', 'Regulator'])
-            .withLabel('Sensor control')
-            .withDescription('Floor or external only works if sensors are installed'),
-            e.numeric('regulator_percentage', ea.ALL),
+                .withLabel('Sensor control')
+                .withDescription('Floor or external only works if sensors are installed'),
+            e.numeric('regulator_percentage', ea.ALL)
+                .withUnit('%')
+                .withValueMax(100)
+                .withValueMin(0)
+                .withValueStep(10),
 
             // Boost mode
             e.enum('countdown_set', ea.ALL, ['Off', '5min', '10min', '15min', '20min', '25min', '30min', '35min', '40min', '45min', '50min', '55min', '1 hour',
@@ -511,18 +497,18 @@ exposes: [
             .withLabel('Holiday end date')
                 .withDescription('End date in MM/DD/YYYY format'),
 
-            // Unknown stuff
-            e.numeric('regulator', ea.ALL),    
-            e.binary('time_sync_flag', ea.STATE_GET, 'ON', 'OFF'),
-            e.numeric('abs_min_heat_setpoint_limit_f', ea.STATE_GET),
-            e.numeric('abs_max_heat_setpoint_limit_f', ea.STATE_GET),
-            e.numeric('abs_min_cool_setpoint_limit_f', ea.STATE_GET),
-            e.numeric('abs_max_cool_setpoint_limit_f', ea.STATE_GET),
-            e.numeric('occupied_cooling_setpoint_f', ea.STATE_GET),
-            e.numeric('occupied_heating_setpoint_f', ea.STATE_GET),
-            e.numeric('local_temperature_f', ea.STATE_GET),
-            e.numeric('holiday_temp_set_f', ea.STATE_GET),
-            e.enum('regulator_mode', ea.STATE_GET, ['ON', 'OFF']), // unsure of values coming from unit        
+            // Unknown stuff 
+            //e.numeric('regulator', ea.ALL),    
+            //e.binary('time_sync_flag', ea.STATE_GET, 'ON', 'OFF'),
+            //e.numeric('abs_min_heat_setpoint_limit_f', ea.STATE_GET),
+            //e.numeric('abs_max_heat_setpoint_limit_f', ea.STATE_GET),
+            //e.numeric('abs_min_cool_setpoint_limit_f', ea.STATE_GET),
+            //e.numeric('abs_max_cool_setpoint_limit_f', ea.STATE_GET),
+            //e.numeric('occupied_cooling_setpoint_f', ea.STATE_GET),
+            //e.numeric('occupied_heating_setpoint_f', ea.STATE_GET),
+            //e.numeric('local_temperature_f', ea.STATE_GET),
+            //e.numeric('holiday_temp_set_f', ea.STATE_GET),
+            //e.enum('regulator_mode', ea.STATE_GET, ['ON', 'OFF']), // unsure of values coming from unit        
             //e.binary('summer_winter_switch', ea.ALL, 'ON', 'OFF'), //can't find this in unit menu??
 
         
@@ -554,18 +540,31 @@ exposes: [
         configure: async (device, coordinatorEndpoint, logger) => {
             
             const endpoint = device.getEndpoint(1);
-            const binds = ['genBasic', 'genIdentify', 'hvacThermostat', 'seMetering', 'haElectricalMeasurement', 'genAlarms', 'hvacUserInterfaceCfg'];
-            const converting = ('countdown_left');
-            console.log(converting);
+            const binds = [
+                'genBasic',
+                'genIdentify',
+                'hvacThermostat',
+                'seMetering',
+                'haElectricalMeasurement',              
+                'hvacUserInterfaceCfg',
+            ];
             await reporting.bind(endpoint, coordinatorEndpoint, binds);
             await reporting.thermostatTemperature(endpoint, { min: 0, change: 50 });
             // await reporting.thermostatPIHeatingDemand(endpoint);
             await reporting.thermostatOccupiedHeatingSetpoint(endpoint);
             await reporting.thermostatKeypadLockMode(endpoint);
+            //Metering
+            await endpoint.read('haElectricalMeasurement', ['acCurrentDivisor', 'rmsCurrent', 'activePower']);
+            await endpoint.read('seMetering', ['currentSummDelivered']);
+            await reporting.rmsCurrent(endpoint, {min: 10, change: 10}); // A - z2m displays only the first decimals, so change of 10 (0,01)
+            await reporting.activePower(endpoint, {min: 10, change: 15}); // W - Min change of 1,5W
+            await reporting.currentSummDelivered(endpoint, {min: 300}); // Report KWH every 5min
+            await reporting.readMeteringMultiplierDivisor(endpoint);
                        
             
             // Trigger initial read
-            await endpoint.read('hvacThermostat', ['systemMode', 'runningMode', 'occupiedHeatingSetpoint']);
+            await endpoint.read('hvacThermostat', ['systemMode', 'runningState', 'occupiedHeatingSetpoint', 'programingOperMode', 'localTemperatureCalibration']);
+            await endpoint.read('hvacUserInterfaceCfg', ['tempDisplayMode', 'keypadLockout']);
             await endpoint.read('hvacThermostat', [0x8000], [0x8001], [0x8002], [0x8003], [0x8004], [0x8005], [0x8006], [0x8007], 
                                                 [0x800a], [0x800b], [0x800c], [0x800d], [0x800e], [0x800f], 
                                                 [0x8010], [0x8011], [0x8012], [0x8013], 
