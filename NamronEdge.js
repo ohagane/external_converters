@@ -20,13 +20,6 @@ const local = {
             convert: (model, msg, publish, options, meta) => {
                 const result  = {};
                 const data = msg.data;
-                
-                
-                // Custom Programming Operation Mode
-                if (msg.data.programingOperMode !== undefined) {    
-                    const lookup = {0: 'Manual', 1: 'Program', 5: 'Eco'};
-                    result['programming_operation_mode'] = utils.getFromLookup(data['programingOperMode'], lookup);
-                }
 
                 //Custom cluster
                 if (data[0x8000] !== undefined) {                   // 0x8000  Window_check                    BOOLEAN true
@@ -125,7 +118,7 @@ const local = {
     tz: {
         namron_thermostat_edge: {
             key: [
-                'programming_operation_mode',
+                
                 'window_check', 
                 'frost', 
                 'window_state', 
@@ -156,12 +149,7 @@ const local = {
                 'countdown_left',
             ],
             convertSet: async(entity, key, value, meta) => {
-                if (key === 'programming_operation_mode') {                          // Custom Programming Operation Mode
-                    const lookup = {'Manual': 0, 'Program': 1, 'Eco': 5};
-                    const payload = {0x0025: {value: utils.getFromLookup(value, lookup), type: Zcl.DataType.BITMAP8}};                   
-                    await entity.write('hvacThermostat', payload);
-             
-                }
+
                 // Custom Cluster 0x8000
                 if (key === 'window_check') {                       // 0x8000  Window_check                     BOOLEAN true
                     const lookup = {'OFF': 0, 'ON': 1};
@@ -297,9 +285,7 @@ const local = {
             },
             convertGet: async (entity, key, meta) => {
                 switch (key) {
-                case 'programming_operation_mode':   
-                    await entity.read('hvacThermostat', [0x0025]);
-                    break;
+  
                 // Custom Cluster 0x8000    
                 case 'window_check':   
                     await entity.read('hvacThermostat', [0x8000]);
@@ -413,8 +399,8 @@ const definitions = [
             toZigbee_1.thermostat_occupied_heating_setpoint,
             toZigbee_1.thermostat_temperature_display_mode,
             toZigbee_1.thermostat_system_mode,
-            toZigbee_1.thermostat_running_mode, //?? 
-            toZigbee_1.thermostat_running_state,          
+            toZigbee_1.thermostat_running_mode,
+            //toZigbee_1.thermostat_running_state,          
             toZigbee_1.namron_thermostat_child_lock,
             local.tz.namron_thermostat_edge,
         ],
@@ -460,10 +446,7 @@ exposes: [
             e.binary('auto_time', ea.ALL, 'ON', 'OFF'),
             //e.numeric('time_sync_value', ea.STATE_GET), // only used by onEvent
 
-            // Mode select
-                // Custom Programming Operation Mode
-            e.enum('programming_operation_mode', ea.ALL, ['Manual', 'Program', 'Eco'])
-                .withLabel('Operating mode'),  
+            // Mode select 
             e.enum('sensor_mode', ea.ALL, ['Air', 'Floor', 'External', 'Regulator'])
                 .withLabel('Sensor control')
                 .withDescription('Floor or external only works if sensors are installed'),
